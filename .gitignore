@@ -2,3 +2,4 @@ build/
 src/secrets.c
 front/web/dist/
 sdkconfig.old
+main/include/secrets.h
