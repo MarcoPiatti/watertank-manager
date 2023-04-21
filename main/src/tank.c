@@ -3,14 +3,14 @@
 
 tank_t tank;
 
-tank_t tank_init(double sensor_height_cm, double diameter_cm, double water_capacity_cm, ultrasonic_sensor_t sensor) {
+tank_t tank_init(double sensor_height_cm, double liters, double water_capacity_cm, ultrasonic_sensor_t sensor) {
     tank_t tank;
     tank.sensor_height_cm = sensor_height_cm;
-    tank.diameter_cm = diameter_cm;
+    tank.liters = liters;
     tank.water_capacity_cm = water_capacity_cm;
     tank.water_level_cm = 0;
-    tank.threshold_min_cm = 0;
-    tank.threshold_max_cm = tank.water_capacity_cm;
+    tank.threshold_min_cm = tank.water_capacity_cm * 0.10;
+    tank.threshold_max_cm = tank.water_capacity_cm * 0.6;
     tank.sensor = sensor;
     return tank;
 }

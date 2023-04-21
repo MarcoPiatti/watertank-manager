@@ -123,10 +123,10 @@ void app_main(void) {
 
     ESP_ERROR_CHECK(start_rest_server(CONFIG_EXAMPLE_WEB_MOUNT_POINT));
     
-    ultrasonic_sensor_t sensor = { .trigger_pin = GPIO_NUM_4, .echo_pin = GPIO_NUM_5};
+    ultrasonic_sensor_t sensor = { .trigger_pin = GPIO_NUM_25, .echo_pin = GPIO_NUM_33};
     ultrasonic_init(&sensor);
-    tank = tank_init(100, 50, 90, sensor);
-    pump = pump_init(GPIO_NUM_21);
+    tank = tank_init(100, 1000, 90, sensor);
+    pump = pump_init(GPIO_NUM_23);
 
     xTaskCreatePinnedToCore(vTask_tank_control, "tank_control_task", 2048, NULL, 5, NULL, 1);
 }
