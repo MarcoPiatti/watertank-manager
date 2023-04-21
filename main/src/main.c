@@ -125,7 +125,7 @@ void app_main(void) {
     
     ultrasonic_sensor_t sensor = { .trigger_pin = GPIO_NUM_25, .echo_pin = GPIO_NUM_33};
     ultrasonic_init(&sensor);
-    tank = tank_init(100, 1000, 90, sensor);
+    tank = tank_init(125, 1100, 118, sensor);
     pump = pump_init(GPIO_NUM_23);
 
     xTaskCreatePinnedToCore(vTask_tank_control, "tank_control_task", 2048, NULL, 5, NULL, 1);
