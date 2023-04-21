@@ -1,4 +1,5 @@
 build/
 front/web/dist/
+sdkconfig
 sdkconfig.old
 main/include/secrets.h
