@@ -1,0 +1,85 @@
+<template>
+    <div style="{position: relative}">
+      <div class="water-tank" :style="{ height: tankHeight + 'px', width: tankWidth + 'px', left: '50%' }">
+        <div class="water-level" :style="{ height: waterLevelpct + '%' }">
+          <div class="water-percentage">{{ waterLevelpct }}%</div>
+        </div>
+      </div>
+      <div class="water-liters" :style="{ top: '-40px', left: '50%' }">{{ waterLiters }} Litros</div>
+    </div>
+</template>
+
+<script lang="ts">
+import { defineComponent } from 'vue';
+import type { PropType } from 'vue';
+import axios from 'axios';
+
+export default defineComponent({
+  name: 'WaterTank',
+  props: {
+    tankWidth: {
+      type: Number as PropType<number>,
+      default: 200
+    },
+    tankHeight: {
+      type: Number as PropType<number>,
+      default: 300
+    }
+  },
+  data() {
+    return {
+      waterLevelpct: 80,
+      waterLiters: 0
+    }
+  },
+  mounted () {
+    axios
+      .get('/api/v1/water_level')
+      .then(response => (this.waterLevelpct = response.data));
+    axios
+      .get('/api/v1/water_liters')
+      .then(response => (this.waterLiters = response.data));
+  }
+});
+</script>
+  
+<style scoped>
+.water-tank {
+  position: relative;
+  background-color: #e6e6e6;
+  border: 5px solid #b3b3b3;
+  border-radius: 20px;
+  margin: 0 auto;
+  overflow: hidden;
+}
+  
+.water-level {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: #2d8dd7;
+  opacity: 0.8;
+  transition: height 1s;
+}
+
+.water-percentage {
+  position: absolute;
+  font-size: 20px;
+  font-weight: bold;
+  text-align: center;
+  width: 100%;
+  color: whitesmoke;
+}
+
+.water-liters {
+  position: absolute;
+  font-size: 20px;
+  font-weight: bold;
+  text-align: center;
+  width: 100%;
+  color: dimgray;
+}
+  
+</style>
+  
