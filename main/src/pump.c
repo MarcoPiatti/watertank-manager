@@ -10,7 +10,7 @@ pump_t pump_init(gpio_num_t pin) {
 
     nvs_handle_t nvs_handle;
     nvs_open("pump", NVS_READWRITE, &nvs_handle);
-    esp_err_t err = nvs_get_u8(nvs_handle, "state", &pump.state);
+    esp_err_t err = nvs_get_u8(nvs_handle, "state", (uint8_t*)&(pump.state));
     if (err == ESP_ERR_NVS_NOT_FOUND) { pump.state = PUMP_OFF; }
     nvs_close(nvs_handle);
     

@@ -15,6 +15,7 @@
 #include "esp_log.h"
 #include "esp_vfs.h"
 #include "cJSON.h"
+#include <nvs.h>
 
 #include "tank.h"
 #include "pump.h"
@@ -31,7 +32,7 @@
         return ESP_OK; \
     }
 
-#define DECLARE_HANDLER_POST_NUM(nameArg, keyArg, typeArg, destinationArg) \
+#define DECLARE_HANDLER_POST_NUM(nameArg, keyArg, typeArg, namespaceArg, destinationArg) \
     static esp_err_t nameArg (httpd_req_t *req) { \
         int total_len = req->content_len; \
         int cur_len = 0; \
@@ -52,8 +53,13 @@
         buf[total_len] = '\0'; \
         cJSON *root = cJSON_Parse(buf); \
         typeArg new_value = cJSON_GetObjectItem(root, #keyArg ) -> value##typeArg ; \
-        destinationArg = new_value; \
+        namespaceArg . destinationArg = new_value; \
         cJSON_Delete(root); \
+        nvs_handle_t handle; \
+        nvs_open(#namespaceArg, NVS_READWRITE, &handle); \
+        nvs_set_blob(handle, #destinationArg, &new_value, sizeof(typeArg)); \
+        nvs_commit(handle); \
+        nvs_close(handle); \
         httpd_resp_sendstr(req, "Post control value successfully"); \
         return ESP_OK; \
     }
@@ -162,13 +168,18 @@ static esp_err_t rest_common_get_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
-DECLARE_HANDLER_GET_NUM(tank_level_get, water_level, tank.water_level_cm)
-DECLARE_HANDLER_GET_NUM(tank_capacity_get, water_capacity, tank.water_capacity_cm)
-DECLARE_HANDLER_GET_NUM(threshold_max_get, threshold_max, tank.threshold_max_cm)
-DECLARE_HANDLER_GET_NUM(threshold_min_get, threshold_min, tank.threshold_min_cm)
+DECLARE_HANDLER_GET_NUM(tank_sensor_pos_get, sensor_pos, tank.sensor_pos_cm)
+DECLARE_HANDLER_GET_NUM(tank_capacity_cm_get, water_capacity, tank.capacity_cm)
+DECLARE_HANDLER_GET_NUM(tank_capacity_lts_get, water_capacity, tank.capacity_lts)
+DECLARE_HANDLER_GET_NUM(tank_water_level_get, water_level, tank.water_level_cm)
+DECLARE_HANDLER_GET_NUM(tank_threshold_full_get, threshold_full, tank.full_pct)
+DECLARE_HANDLER_GET_NUM(tank_threshold_low_get, threshold_low, tank.low_pct)
 
-DECLARE_HANDLER_POST_NUM(threshold_max_post, threshold_max, double, tank.threshold_max_cm)
-DECLARE_HANDLER_POST_NUM(threshold_min_post, threshold_min, double, tank.threshold_min_cm)
+DECLARE_HANDLER_POST_NUM(tank_sensor_pos_post, sensor_pos, double, tank, sensor_pos_cm)
+DECLARE_HANDLER_POST_NUM(tank_capacity_cm_post, water_capacity, double, tank, capacity_cm)
+DECLARE_HANDLER_POST_NUM(tank_capacity_lts_post, water_capacity, double, tank, capacity_lts)
+DECLARE_HANDLER_POST_NUM(threshold_full_post, threshold_full, double, tank, full_pct)
+DECLARE_HANDLER_POST_NUM(threshold_low_post, threshold_low, double, tank, low_pct)
 
 esp_err_t start_rest_server(const char *base_path)
 {
@@ -192,13 +203,18 @@ esp_err_t start_rest_server(const char *base_path)
     };
     httpd_register_uri_handler(server, &common_get_uri);
 
-    REGISTER_HANDLER(/api/tank/level, GET, tank_level_get);
-    REGISTER_HANDLER(/api/tank/capacity, GET, tank_capacity_get);
-    REGISTER_HANDLER(/api/tank/threshold_max, GET, threshold_max_get);
-    REGISTER_HANDLER(/api/tank/threshold_min, GET, threshold_min_get);
+    REGISTER_HANDLER(/api/tank/sensor-pos, GET, tank_sensor_pos_get);
+    REGISTER_HANDLER(/api/tank/water-level, GET, tank_water_level_get);
+    REGISTER_HANDLER(/api/tank/capacity/cm, GET, tank_capacity_cm_get);
+    REGISTER_HANDLER(/api/tank/capacity/lts, GET, tank_capacity_lts_get);
+    REGISTER_HANDLER(/api/tank/threshold-full, GET, tank_threshold_full_get);
+    REGISTER_HANDLER(/api/tank/threshold-low, GET, tank_threshold_low_get);
 
-    REGISTER_HANDLER(/api/tank/threshold_max, POST, threshold_max_post);
-    REGISTER_HANDLER(/api/tank/threshold_min, POST, threshold_min_post);
+    REGISTER_HANDLER(/api/tank/sensor-pos, POST, tank_sensor_pos_post);
+    REGISTER_HANDLER(/api/tank/capacity/cm, POST, tank_capacity_cm_post);
+    REGISTER_HANDLER(/api/tank/capacity/lts, POST, tank_capacity_lts_post);
+    REGISTER_HANDLER(/api/tank/threshold_full, POST, threshold_full_post);
+    REGISTER_HANDLER(/api/tank/threshold_low, POST, threshold_low_post);
 
     return ESP_OK;
 err_start:

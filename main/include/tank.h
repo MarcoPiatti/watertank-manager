@@ -11,8 +11,8 @@ typedef enum tank_state {
 
 typedef struct tank {
     double sensor_pos_cm;
-    double liters;
-    double water_max_cm;
+    double capacity_lts;
+    double capacity_cm;
     double water_level_cm;
     double low_pct;
     double full_pct;
@@ -23,7 +23,7 @@ typedef struct tank {
 extern tank_t tank;
 #endif // !IS_TANK_C
 
-tank_t tank_init(double sensor_pos_cm, double liters, double water_max_cm, ultrasonic_sensor_t sensor);
+tank_t tank_init(double sensor_pos_cm, double capacity_lts, double capacity_cm, ultrasonic_sensor_t sensor);
 
 tank_state_t tank_update_water_level(tank_t *tank);
 
