@@ -83,8 +83,7 @@ esp_err_t init_fs(void)
 
 void vTask_tank_control( void * pvParameters )
 {
-    //60000ms = 1min de polling rate
-    const TickType_t xDelay = 60000 / portTICK_PERIOD_MS;
+    const TickType_t xDelay = 1000/*ms*/ / portTICK_PERIOD_MS;
     for( ;; )
     {
         tank_state_t tank_state = tank_update_water_level(&tank);
