@@ -22,7 +22,7 @@ pump_t pump_init(gpio_num_t pin) {
         .intr_type = GPIO_INTR_DISABLE
     };
     gpio_config(&pump_config);
-    gpio_set_level(pump->pin, pump.state==PUMP_OFF ? 0 : 1);
+    gpio_set_level(pump.pin, pump.state==PUMP_OFF ? 0 : 1);
 
     return pump;
 }
