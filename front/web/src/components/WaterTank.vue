@@ -1,11 +1,11 @@
 <template>
     <div style="{position: relative}">
       <div class="water-tank" :style="{ height: tankHeight + 'px', width: tankWidth + 'px', left: '50%' }">
-        <div class="water-level" :style="{ height: waterLevelpct + '%' }">
-          <div class="water-percentage">{{ waterLevelpct }}%</div>
+        <div class="water-level" :style="{ height: measure.waterLevelpct + '%' }">
+          <div class="water-percentage">{{ measure.waterLevelpct }}%</div>
         </div>
       </div>
-      <div class="water-liters" :style="{ top: '-40px', left: '50%' }">{{ waterLiters }} Litros</div>
+      <div class="water-liters" :style="{ top: '-40px', left: '50%' }">{{ measure.waterLevellts }} Litros</div>
     </div>
 </template>
 
@@ -28,17 +28,24 @@ export default defineComponent({
   },
   data() {
     return {
-      waterLevelpct: 80,
-      waterLiters: 0
+      tankInfo: {
+        sensor_pos_cm: 0,
+        capacity_lts: 0,
+        capacity_cm: 0,
+        low_pct: 0,
+        high_pct: 0
+      },
+      measure: {
+        waterLevelpct: 0,
+        waterLevellts: 0,
+        waterLevelcm: 0
+      }
     }
   },
+  
   mounted () {
-    axios
-      .get('/api/v1/water_level')
-      .then(response => (this.waterLevelpct = response.data));
-    axios
-      .get('/api/v1/water_liters')
-      .then(response => (this.waterLiters = response.data));
+    axios.get('/api/tank-info').then(response => {this.tankInfo = response.data;});   
+    axios.get('/api/tank/capacity/lts').then(response => (this.measure = response.data));
   }
 });
 </script>

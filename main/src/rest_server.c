@@ -122,7 +122,6 @@ static esp_err_t set_content_type_from_file(httpd_req_t *req, const char *filepa
 static esp_err_t rest_common_get_handler(httpd_req_t *req)
 {
     char filepath[FILE_PATH_MAX];
-
     rest_server_context_t *rest_context = (rest_server_context_t *)req->user_ctx;
     strlcpy(filepath, rest_context->base_path, sizeof(filepath));
     if (req->uri[strlen(req->uri) - 1] == '/') {
@@ -168,18 +167,72 @@ static esp_err_t rest_common_get_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
-DECLARE_HANDLER_GET_NUM(tank_sensor_pos_get, sensor_pos, tank.sensor_pos_cm)
-DECLARE_HANDLER_GET_NUM(tank_capacity_cm_get, water_capacity, tank.capacity_cm)
-DECLARE_HANDLER_GET_NUM(tank_capacity_lts_get, water_capacity, tank.capacity_lts)
-DECLARE_HANDLER_GET_NUM(tank_water_level_get, water_level, tank.water_level_cm)
-DECLARE_HANDLER_GET_NUM(tank_threshold_full_get, threshold_full, tank.full_pct)
-DECLARE_HANDLER_GET_NUM(tank_threshold_low_get, threshold_low, tank.low_pct)
+esp_err_t tank_get_handler(httpd_req_t *req) {
+    httpd_resp_set_type(req, "application/json"); 
+    cJSON *root = tank_to_json(&tank); 
+    const char *response = cJSON_Print(root); 
+    httpd_resp_sendstr(req, response); 
+    free((void *)response); 
+    cJSON_Delete(root); 
+    return ESP_OK; 
+}
 
-DECLARE_HANDLER_POST_NUM(tank_sensor_pos_post, sensor_pos, double, tank, sensor_pos_cm)
-DECLARE_HANDLER_POST_NUM(tank_capacity_cm_post, water_capacity, double, tank, capacity_cm)
-DECLARE_HANDLER_POST_NUM(tank_capacity_lts_post, water_capacity, double, tank, capacity_lts)
-DECLARE_HANDLER_POST_NUM(threshold_full_post, threshold_full, double, tank, full_pct)
-DECLARE_HANDLER_POST_NUM(threshold_low_post, threshold_low, double, tank, low_pct)
+esp_err_t pump_get_handler(httpd_req_t *req) {
+    httpd_resp_set_type(req, "application/json"); 
+    cJSON *root = cJSON_CreateObject();
+    cJSON_AddBoolToObject(root, "pump_state", pump.state);
+    const char *response = cJSON_Print(root); 
+    httpd_resp_sendstr(req, response); 
+    free((void *)response); 
+    cJSON_Delete(root); 
+    return ESP_OK; 
+}
+
+esp_err_t tank_post_handler(httpd_req_t *req) {
+    char buf[1024];
+    int ret, remaining = req->content_len;
+    while (remaining > 0) {
+        /* Read the data for the request */
+        if ((ret = httpd_req_recv(req, buf, remaining)) <= 0) {
+            if (ret == HTTPD_SOCK_ERR_TIMEOUT) {
+                /* Retry receiving if timeout occurred */
+                continue;
+            }
+            return ESP_FAIL;
+        }
+        /* Data received */
+        cJSON *root = cJSON_Parse(buf);
+        if (root == NULL) {
+            const char *error_ptr = cJSON_GetErrorPtr();
+            if (error_ptr != NULL) {
+                ESP_LOGE(REST_TAG, "Error before: %s", error_ptr);
+            }
+            return ESP_FAIL;
+        }
+        tank_t new = tank_from_json(root);
+        tank.sensor_pos_cm = new.sensor_pos_cm;
+        tank.capacity_lts = new.capacity_lts;
+        tank.capacity_cm = new.capacity_cm;
+        tank.water_level_cm = new.water_level_cm;
+        tank.low_pct = new.low_pct;
+        tank.full_pct = new.full_pct;
+        tank_persist(&tank);
+        cJSON_Delete(root);
+        remaining -= ret;
+    }
+    return ESP_OK;
+}
+
+esp_err_t water_level_get_handler(httpd_req_t *req) {
+    httpd_resp_set_type(req, "application/json");
+    water_level_t wl = tank_get_water_level(&tank);
+    cJSON *root = water_level_to_json(wl);
+    const char *response = cJSON_Print(root); 
+    httpd_resp_sendstr(req, response); 
+    free((void *)response); 
+    cJSON_Delete(root); 
+    return ESP_OK; 
+}
 
 esp_err_t start_rest_server(const char *base_path)
 {
@@ -190,10 +243,35 @@ esp_err_t start_rest_server(const char *base_path)
 
     httpd_handle_t server = NULL;
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+    config.max_uri_handlers = 16;
     config.uri_match_fn = httpd_uri_match_wildcard;
 
     ESP_LOGI(REST_TAG, "Starting HTTP Server");
     REST_CHECK(httpd_start(&server, &config) == ESP_OK, "Start server failed", err_start);
+
+    httpd_uri_t water_level_get_uri = {
+        .uri = "/water-level",
+        .method = HTTP_GET,
+        .handler = water_level_get_handler,
+        .user_ctx = rest_context
+    };
+    httpd_register_uri_handler(server, &water_level_get_uri);
+    
+    httpd_uri_t tank_get_uri = {
+        .uri = "/tank",
+        .method = HTTP_GET,
+        .handler = tank_get_handler,
+        .user_ctx = rest_context
+    };
+    httpd_register_uri_handler(server, &tank_get_uri);
+
+    httpd_uri_t pump_get_uri = {
+        .uri = "/pump",
+        .method = HTTP_GET,
+        .handler = pump_get_handler,
+        .user_ctx = rest_context
+    };
+    httpd_register_uri_handler(server, &pump_get_uri);
 
     httpd_uri_t common_get_uri = {
         .uri = "/*",
@@ -202,19 +280,6 @@ esp_err_t start_rest_server(const char *base_path)
         .user_ctx = rest_context
     };
     httpd_register_uri_handler(server, &common_get_uri);
-
-    REGISTER_HANDLER(/api/tank/sensor-pos, GET, tank_sensor_pos_get);
-    REGISTER_HANDLER(/api/tank/water-level, GET, tank_water_level_get);
-    REGISTER_HANDLER(/api/tank/capacity/cm, GET, tank_capacity_cm_get);
-    REGISTER_HANDLER(/api/tank/capacity/lts, GET, tank_capacity_lts_get);
-    REGISTER_HANDLER(/api/tank/threshold-full, GET, tank_threshold_full_get);
-    REGISTER_HANDLER(/api/tank/threshold-low, GET, tank_threshold_low_get);
-
-    REGISTER_HANDLER(/api/tank/sensor-pos, POST, tank_sensor_pos_post);
-    REGISTER_HANDLER(/api/tank/capacity/cm, POST, tank_capacity_cm_post);
-    REGISTER_HANDLER(/api/tank/capacity/lts, POST, tank_capacity_lts_post);
-    REGISTER_HANDLER(/api/tank/threshold_full, POST, threshold_full_post);
-    REGISTER_HANDLER(/api/tank/threshold_low, POST, threshold_low_post);
 
     return ESP_OK;
 err_start:
