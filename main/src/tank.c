@@ -60,9 +60,10 @@ water_level_t tank_get_water_level(tank_t *tank) {
 
 tank_state_t tank_update_water_level(tank_t *tank) {
     uint32_t measurement;
-    ultrasonic_measure_cm(&(tank->sensor), tank->sensor_pos_cm, &measurement);
+    esp_err_t err = ultrasonic_measure_cm(&(tank->sensor), tank->sensor_pos_cm, &measurement);
+    if(err == ESP_OK){
     tank->water_level_cm = tank->sensor_pos_cm - (double)measurement;
-
+    }
     if (tank->water_level_cm < tank->capacity_cm * tank->low_pct) { return TANK_LOW; }
     if (tank->water_level_cm > tank->capacity_cm * tank->full_pct) { return TANK_FULL; }
     

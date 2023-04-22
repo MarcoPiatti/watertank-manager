@@ -250,7 +250,7 @@ esp_err_t start_rest_server(const char *base_path)
     REST_CHECK(httpd_start(&server, &config) == ESP_OK, "Start server failed", err_start);
 
     httpd_uri_t water_level_get_uri = {
-        .uri = "/water-level",
+        .uri = "/measure",
         .method = HTTP_GET,
         .handler = water_level_get_handler,
         .user_ctx = rest_context

@@ -17,5 +17,7 @@
         "pump.h": "c",
         "esp_http_server.h": "c"
     },
-    "editor.rename.enablePreview": false
+    "editor.rename.enablePreview": false,
+    "idf.port": "/dev/ttyUSB0",
+    "idf.flashType": "UART"
 }

@@ -1,11 +1,11 @@
 <template>
     <div style="{position: relative}">
       <div class="water-tank" :style="{ height: tankHeight + 'px', width: tankWidth + 'px', left: '50%' }">
-        <div class="water-level" :style="{ height: measure.waterLevelpct + '%' }">
-          <div class="water-percentage">{{ measure.waterLevelpct }}%</div>
+        <div class="water-level" :style="{ height: measure.water_level_pct * 100 + '%' }">
+          <div class="water-percentage">{{ measure.water_level_pct * 100 }}%</div>
         </div>
       </div>
-      <div class="water-liters" :style="{ top: '-40px', left: '50%' }">{{ measure.waterLevellts }} Litros</div>
+      <div class="water-liters" :style="{ top: '-40px', left: '50%' }">{{ measure.water_level_lts }} L</div>
     </div>
 </template>
 
@@ -36,16 +36,16 @@ export default defineComponent({
         high_pct: 0
       },
       measure: {
-        waterLevelpct: 0,
-        waterLevellts: 0,
-        waterLevelcm: 0
+        water_level_pct: 0,
+        water_level_lts: 0,
+        water_level_cm: 0
       }
     }
   },
   
   mounted () {
-    axios.get('/api/tank-info').then(response => {this.tankInfo = response.data;});   
-    axios.get('/api/tank/capacity/lts').then(response => (this.measure = response.data));
+    axios.get('/tank').then(response => {this.tankInfo = response.data;});   
+    axios.get('/measure').then(response => (this.measure = response.data));
   }
 });
 </script>
