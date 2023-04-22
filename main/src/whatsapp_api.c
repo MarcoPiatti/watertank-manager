@@ -42,7 +42,7 @@ void whatsapp_notify(whatsapp_event_t event, const char * const phone) {
 
     // Set the HTTP request configuration
     esp_http_client_config_t config = {
-        .url = "https://graph.facebook.com/v16.0/112002441869599/messages",
+        .url = wpp_url,
         .method = HTTP_METHOD_POST,
         .event_handler = NULL,
         .transport_type = HTTP_TRANSPORT_OVER_SSL,
