@@ -3,3 +3,5 @@ front/web/dist/
 sdkconfig
 sdkconfig.old
 main/include/secrets.h
+.vscode/
+.devcontainer/
