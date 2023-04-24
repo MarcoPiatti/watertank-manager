@@ -1,10 +1,10 @@
 <template>
       <div class="water-tank" :style="{ height: tankHeight + 'px', width: tankWidth + 'px' }">
         <div class="water-level" :style="{ height: measure.water_level_pct * 100 + '%' }">
-          <div class="water-percentage">{{ measure.water_level_pct * 100 }}%</div>
+          <div class="water-percentage">{{ (measure.water_level_pct * 100).toFixed(0) }}%</div>
         </div>
       </div>
-      <div class="water-liters" :style="{ top: '-40px' }">{{ measure.water_level_lts }} L</div>
+      <div class="water-liters" :style="{ top: '-40px' }">{{ measure.water_level_lts.toFixed(0) }} L</div>
 </template>
 
 <script lang="ts">
