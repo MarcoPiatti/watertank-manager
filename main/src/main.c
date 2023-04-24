@@ -122,7 +122,7 @@ void app_main(void) {
 
     ESP_ERROR_CHECK(start_rest_server(CONFIG_EXAMPLE_WEB_MOUNT_POINT));
     
-    ultrasonic_sensor_t sensor = { .trigger_pin = GPIO_NUM_25, .echo_pin = GPIO_NUM_33};
+    ultrasonic_sensor_t sensor = { .trigger_pin = GPIO_NUM_33, .echo_pin = GPIO_NUM_25};
     ultrasonic_init(&sensor);
     tank = tank_init(125, 1100, 118, sensor);
     pump = pump_init(GPIO_NUM_23);
