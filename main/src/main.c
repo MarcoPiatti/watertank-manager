@@ -99,7 +99,7 @@ void vTask_tank_control( void * pvParameters )
             esp_event_post(WHATSAPP_EVENT, WPP_PUMP_IS_BACK_ON, NULL, 0, portMAX_DELAY);
         }
 
-        if (tank.water_level_cm <= water_level_cm_old && tank.water_level_cm < tank.capacity_cm * 0.95) {
+        if (tank.water_level_cm <= water_level_cm_old && tank.water_level_cm < tank.capacity_cm * 0.85) {
             down_seconds++;
         } else {
             down_seconds = 0;
