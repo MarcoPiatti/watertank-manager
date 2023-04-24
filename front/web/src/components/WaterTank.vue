@@ -40,9 +40,18 @@ export default defineComponent({
       }
     }
   },
-  mounted () {
-    axios.get('/tank').then(response => {this.tankInfo = response.data;});   
-    axios.get('/measure').then(response => (this.measure = response.data));
+  mounted() {
+    // Call updateData function every 1 second
+    setInterval(() => {
+      this.updateData();
+    }, 1000);
+  },
+  methods: {
+    // Update data using Axios
+    updateData() {
+      axios.get('/tank').then(response => { this.tankInfo = response.data; });   
+      axios.get('/measure').then(response => { this.measure = response.data; });
+    }
   }
 });
 </script>

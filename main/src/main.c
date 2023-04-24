@@ -106,6 +106,7 @@ void vTask_tank_control( void * pvParameters )
         }
         if (down_seconds > 3600) {
             esp_event_post(WHATSAPP_EVENT, WPP_TANK_NOT_REFILLING, NULL, 0, portMAX_DELAY);
+            down_seconds = 0;
         }
 
         vTaskDelay(xDelay);
