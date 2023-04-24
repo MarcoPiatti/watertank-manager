@@ -69,6 +69,7 @@ void whatsapp_config_recover() {
     whatsapp_config.api_key = api_key;
 
     for(int i = 0; i < 5; i++) {
+        if (whatsapp_config.contacts[i] != NULL) { continue; }
         char key[10];
         sprintf(key, "contact%d", i);
         size_t required_size = 0;
