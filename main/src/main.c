@@ -112,10 +112,19 @@ void vTask_tank_control( void * pvParameters )
     }
 }
 
+void vTask_whatsapp_notifyall( void * pvParameters )
+{
+    for( ;;){
+        whatsapp_notify_all((whatsapp_event_t)pvParameters);
+        vTaskDelete(NULL);
+    }
+}
+
 void whatsapp_event_handler(void *handler_args, esp_event_base_t base, int32_t id, void *event_data) {
     if (base != WHATSAPP_EVENT) { return; }
+    ESP_LOGI(TAG, "whatsapp_event_handler: %ld", id);
     whatsapp_event_t event = (whatsapp_event_t)id;
-    whatsapp_notify_all(event);
+    xTaskCreate(vTask_whatsapp_notifyall, "whatsapp_notifyall", 4096, (void*)event, 5, NULL);
 }
 
 void app_main(void) {

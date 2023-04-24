@@ -40,7 +40,6 @@ export default defineComponent({
       }
     }
   },
-  
   mounted () {
     axios.get('/tank').then(response => {this.tankInfo = response.data;});   
     axios.get('/measure').then(response => (this.measure = response.data));

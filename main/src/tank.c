@@ -1,6 +1,7 @@
 #define IS_TANK_C
 #include <tank.h>
 #include <nvs.h>
+#include "esp_log.h"
 
 tank_t tank;
 
@@ -62,7 +63,8 @@ tank_state_t tank_update_water_level(tank_t *tank) {
     uint32_t measurement;
     esp_err_t err = ultrasonic_measure_cm(&(tank->sensor), tank->sensor_pos_cm, &measurement);
     if(err == ESP_OK){
-    tank->water_level_cm = tank->sensor_pos_cm - (double)measurement;
+        tank->water_level_cm = tank->sensor_pos_cm - (double)measurement;
+        ESP_LOGI("tank", "Water level: %f cm", tank->water_level_cm);
     }
     if (tank->water_level_cm < tank->capacity_cm * tank->low_pct) { return TANK_LOW; }
     if (tank->water_level_cm > tank->capacity_cm * tank->full_pct) { return TANK_FULL; }

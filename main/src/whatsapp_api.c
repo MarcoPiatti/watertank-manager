@@ -45,7 +45,7 @@ void whatsapp_config_recover() {
     size_t required_size = 0;
     char *endpoint = NULL;
     esp_err_t err = nvs_get_str(nvs_handle, "endpoint", NULL, &required_size);
-    if (err != ESP_ERR_NVS_NOT_FOUND) {
+    if (err == ESP_ERR_NVS_NOT_FOUND) {
         endpoint = malloc(strlen(default_wpp_url) + 1);
         strcpy(endpoint, default_wpp_url);
     }
@@ -58,7 +58,7 @@ void whatsapp_config_recover() {
     required_size = 0;
     char *api_key = NULL;
     err = nvs_get_str(nvs_handle, "api_key", NULL, &required_size);
-    if (err != ESP_ERR_NVS_NOT_FOUND) {
+    if (err == ESP_ERR_NVS_NOT_FOUND) {
         api_key = malloc(strlen(default_api_key) + 1);
         strcpy(api_key, default_api_key);
     }
@@ -75,7 +75,7 @@ void whatsapp_config_recover() {
         size_t required_size = 0;
         whatsapp_contact_t *contact = NULL;
         err = nvs_get_blob(nvs_handle, key, NULL, &required_size);
-        if (err != ESP_ERR_NVS_NOT_FOUND) {
+        if (err == ESP_ERR_NVS_NOT_FOUND) {
             contact = NULL;
         }
         else {
