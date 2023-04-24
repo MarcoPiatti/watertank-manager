@@ -4,9 +4,10 @@
 #include <string.h>
 #include "esp_http_client.h"
 #include "cJSON.h"
+#include "nvs.h"
 #include <secrets.h>
 
-#define WPP_MAX_CONTACTS 5
+#define IS_WPP_C
 
 const char * const whatsapp_template_strings[] = {
     "low_water_alert",
@@ -15,25 +16,80 @@ const char * const whatsapp_template_strings[] = {
     "hello_world"
 };
 
-typedef struct whatsapp_contact {
-    const char * const phone;
-    const char * const name;
-} whatsapp_contact_t;
-
 whatsapp_contact_t wpp_marco = {marco_phone, "Marco"};
 
-whatsapp_contact_t* whatsapp_contacts[WPP_MAX_CONTACTS] = {
-    &wpp_marco,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+whatsapp_config_t whatsapp_config = {
+    .endpoint = NULL,
+    .api_key = NULL,
+    .contacts = {&wpp_marco, NULL, NULL, NULL, NULL}
 };
 
+void whatsapp_persist(whatsapp_config_t config) {
+    nvs_handle_t nvs_handle;
+    nvs_open("whatsapp", NVS_READWRITE, &nvs_handle);
+    nvs_set_str(nvs_handle, "endpoint", config.endpoint);
+    nvs_set_str(nvs_handle, "api_key", config.api_key);
+    for (int i = 0; i < 5; i++) {
+        if (config.contacts[i] == NULL) { break; }
+        char key[10];
+        sprintf(key, "contact%d", i);
+        nvs_set_blob(nvs_handle, key, config.contacts[i], sizeof(whatsapp_contact_t));
+    }    
+    nvs_commit(nvs_handle);
+    nvs_close(nvs_handle);
+}
+
+void whatsapp_config_recover() {
+    nvs_handle_t nvs_handle;
+    nvs_open("whatsapp", NVS_READWRITE, &nvs_handle);
+    size_t required_size = 0;
+    char *endpoint = NULL;
+    esp_err_t err = nvs_get_str(nvs_handle, "endpoint", NULL, &required_size);
+    if (err != ESP_ERR_NVS_NOT_FOUND) {
+        endpoint = malloc(strlen(default_wpp_url) + 1);
+        strcpy(endpoint, default_wpp_url);
+    }
+    else {
+        endpoint = malloc(required_size);
+        nvs_get_str(nvs_handle, "endpoint", endpoint, &required_size);
+    }
+    whatsapp_config.endpoint = endpoint;
+
+    required_size = 0;
+    char *api_key = NULL;
+    err = nvs_get_str(nvs_handle, "api_key", NULL, &required_size);
+    if (err != ESP_ERR_NVS_NOT_FOUND) {
+        api_key = malloc(strlen(default_api_key) + 1);
+        strcpy(api_key, default_api_key);
+    }
+    else {
+        api_key = malloc(required_size);
+        nvs_get_str(nvs_handle, "api_key", api_key, &required_size);
+    }
+    whatsapp_config.api_key = api_key;
+
+    for(int i = 0; i < 5; i++) {
+        char key[10];
+        sprintf(key, "contact%d", i);
+        size_t required_size = 0;
+        whatsapp_contact_t *contact = NULL;
+        err = nvs_get_blob(nvs_handle, key, NULL, &required_size);
+        if (err != ESP_ERR_NVS_NOT_FOUND) {
+            contact = NULL;
+        }
+        else {
+            contact = malloc(required_size);
+            nvs_get_blob(nvs_handle, key, contact, &required_size);
+        }
+        whatsapp_config.contacts[i] = contact;
+    }
+
+}
+
 void whatsapp_notify_all(whatsapp_event_t event) {
-    for(int i = 0; i < WPP_MAX_CONTACTS; i++) {
-        if (whatsapp_contacts[i] == NULL) { break; }
-        whatsapp_notify(event, whatsapp_contacts[i]->phone);
+    for(int i = 0; i < 5; i++) {
+        if (whatsapp_config.contacts[i] == NULL) { break; }
+        whatsapp_notify(event, whatsapp_config.contacts[i]->phone);
     }
 }
 
@@ -43,7 +99,7 @@ void whatsapp_notify(whatsapp_event_t event, const char * const phone) {
 
     // Set the HTTP request configuration
     esp_http_client_config_t config = {
-        .url = wpp_url,
+        .url = whatsapp_config.endpoint,
         .method = HTTP_METHOD_POST,
         .event_handler = NULL,
         .transport_type = HTTP_TRANSPORT_OVER_SSL,
@@ -53,7 +109,7 @@ void whatsapp_notify(whatsapp_event_t event, const char * const phone) {
     esp_http_client_handle_t client = esp_http_client_init(&config);
     
     // Set the headers
-    esp_http_client_set_header(client, "Authorization", api_key);
+    esp_http_client_set_header(client, "Authorization", whatsapp_config.api_key);
     esp_http_client_set_header(client, "Content-Type", "application/json");
     
     // Set the JSON body

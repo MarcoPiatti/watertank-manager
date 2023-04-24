@@ -19,63 +19,7 @@
 
 #include "tank.h"
 #include "pump.h"
-
-#define DECLARE_HANDLER_GET_NUM(nameArg, keyArg, valueArg) \
-    static esp_err_t nameArg (httpd_req_t *req) { \
-        httpd_resp_set_type(req, "application/json"); \
-        cJSON *root = cJSON_CreateObject(); \
-        cJSON_AddNumberToObject(root, #keyArg, valueArg ); \
-        const char *response = cJSON_Print(root); \
-        httpd_resp_sendstr(req, response); \
-        free((void *)response); \
-        cJSON_Delete(root); \
-        return ESP_OK; \
-    }
-
-#define DECLARE_HANDLER_POST_NUM(nameArg, keyArg, typeArg, namespaceArg, destinationArg) \
-    static esp_err_t nameArg (httpd_req_t *req) { \
-        int total_len = req->content_len; \
-        int cur_len = 0; \
-        char *buf = ((rest_server_context_t *)(req->user_ctx))->scratch; \
-        int received = 0; \
-        if (total_len >= SCRATCH_BUFSIZE) { \
-            httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "content too long"); \
-            return ESP_FAIL; \
-        } \
-        while (cur_len < total_len) { \
-            received = httpd_req_recv(req, buf + cur_len, total_len); \
-            if (received <= 0) { \
-                httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to post control value"); \
-                return ESP_FAIL; \
-            } \
-            cur_len += received; \
-        } \
-        buf[total_len] = '\0'; \
-        cJSON *root = cJSON_Parse(buf); \
-        typeArg new_value = cJSON_GetObjectItem(root, #keyArg ) -> value##typeArg ; \
-        namespaceArg . destinationArg = new_value; \
-        cJSON_Delete(root); \
-        nvs_handle_t handle; \
-        nvs_open(#namespaceArg, NVS_READWRITE, &handle); \
-        nvs_set_blob(handle, #destinationArg, &new_value, sizeof(typeArg)); \
-        nvs_commit(handle); \
-        nvs_close(handle); \
-        httpd_resp_sendstr(req, "Post control value successfully"); \
-        return ESP_OK; \
-    }
-
-#define REGISTER_HANDLER(uriArg, methodArg, handlerArg)             \
-    do                                                              \
-    {                                                               \
-        httpd_uri_t handlerArg##_uri = {                            \
-            .uri = #uriArg ,                                        \
-            .method = HTTP_##methodArg ,                            \
-            .handler = handlerArg ,                                 \
-            .user_ctx = rest_context                                \
-        };                                                          \
-        httpd_register_uri_handler(server, & handlerArg##_uri);     \
-    } while (0)
-
+#include "whatsapp_api.h"
 
 static const char *REST_TAG = "esp-rest";
 #define REST_CHECK(a, str, goto_tag, ...)                                              \
@@ -189,37 +133,70 @@ esp_err_t pump_get_handler(httpd_req_t *req) {
 }
 
 esp_err_t tank_post_handler(httpd_req_t *req) {
-    char buf[1024];
-    int ret, remaining = req->content_len;
-    while (remaining > 0) {
-        /* Read the data for the request */
-        if ((ret = httpd_req_recv(req, buf, remaining)) <= 0) {
-            if (ret == HTTPD_SOCK_ERR_TIMEOUT) {
-                /* Retry receiving if timeout occurred */
-                continue;
+    int total_len = req->content_len; 
+    int cur_len = 0; 
+    char *buf = ((rest_server_context_t *)(req->user_ctx))->scratch; 
+    int received = 0; 
+    if (total_len >= SCRATCH_BUFSIZE) { 
+        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "content too long"); 
+        return ESP_FAIL; 
+    } 
+    while (cur_len < total_len) { 
+        received = httpd_req_recv(req, buf + cur_len, total_len); 
+        if (received <= 0) { 
+            httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to post control value"); 
+            return ESP_FAIL; 
+        } 
+        cur_len += received; 
+    } 
+    buf[total_len] = '\0'; 
+    cJSON *root = cJSON_Parse(buf);
+    tank_t new = tank_from_json(root);
+    tank.sensor_pos_cm = new.sensor_pos_cm;
+    tank.capacity_lts = new.capacity_lts;
+    tank.capacity_cm = new.capacity_cm;
+    tank.water_level_cm = new.water_level_cm;
+    tank.low_pct = new.low_pct;
+    tank.full_pct = new.full_pct;
+    tank_persist(&tank);
+    cJSON_Delete(root);
+    return ESP_OK;
+}
+
+esp_err_t whatsapp_post_handler(httpd_req_t *req) {
+    int total_len = req->content_len; 
+    int cur_len = 0; 
+    char *buf = ((rest_server_context_t *)(req->user_ctx))->scratch; 
+    int received = 0; 
+    if (total_len >= SCRATCH_BUFSIZE) { 
+        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "content too long"); 
+        return ESP_FAIL; 
+    } 
+    while (cur_len < total_len) { 
+        received = httpd_req_recv(req, buf + cur_len, total_len); 
+        if (received <= 0) { 
+            httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to post control value"); 
+            return ESP_FAIL; 
+        } 
+        cur_len += received; 
+    } 
+    buf[total_len] = '\0'; 
+    cJSON *root = cJSON_Parse(buf);
+    whatsapp_config.api_key = cJSON_GetObjectItem(root, "api_key")->valuestring;
+    whatsapp_config.endpoint = cJSON_GetObjectItem(root, "endpoint")->valuestring;
+    cJSON* contacts = cJSON_GetObjectItem(root, "contacts");
+    for (int i = 0; i < 5; i++) {
+        cJSON* contact = cJSON_GetArrayItem(contacts, i);
+        if (contact) {
+            if (whatsapp_config.contacts[i] == NULL) {
+                whatsapp_config.contacts[i] = malloc(sizeof(whatsapp_contact_t));
             }
-            return ESP_FAIL;
+            whatsapp_config.contacts[i]->phone = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(contact, "phone"));
+            whatsapp_config.contacts[i]->name = cJSON_GetStringValue(cJSON_GetObjectItemCaseSensitive(contact, "name"));
         }
-        /* Data received */
-        cJSON *root = cJSON_Parse(buf);
-        if (root == NULL) {
-            const char *error_ptr = cJSON_GetErrorPtr();
-            if (error_ptr != NULL) {
-                ESP_LOGE(REST_TAG, "Error before: %s", error_ptr);
-            }
-            return ESP_FAIL;
-        }
-        tank_t new = tank_from_json(root);
-        tank.sensor_pos_cm = new.sensor_pos_cm;
-        tank.capacity_lts = new.capacity_lts;
-        tank.capacity_cm = new.capacity_cm;
-        tank.water_level_cm = new.water_level_cm;
-        tank.low_pct = new.low_pct;
-        tank.full_pct = new.full_pct;
-        tank_persist(&tank);
-        cJSON_Delete(root);
-        remaining -= ret;
     }
+    whatsapp_persist(whatsapp_config);
+    cJSON_Delete(root);
     return ESP_OK;
 }
 
@@ -265,6 +242,14 @@ esp_err_t start_rest_server(const char *base_path)
     };
     httpd_register_uri_handler(server, &tank_get_uri);
 
+    httpd_uri_t tank_post_uri = {
+        .uri = "/tank",
+        .method = HTTP_POST,
+        .handler = tank_post_handler,
+        .user_ctx = rest_context
+    };
+    httpd_register_uri_handler(server, &tank_post_uri);
+
     httpd_uri_t pump_get_uri = {
         .uri = "/pump",
         .method = HTTP_GET,
@@ -272,6 +257,14 @@ esp_err_t start_rest_server(const char *base_path)
         .user_ctx = rest_context
     };
     httpd_register_uri_handler(server, &pump_get_uri);
+
+    httpd_uri_t whatsapp_post_uri = {
+        .uri = "/whatsapp",
+        .method = HTTP_POST,
+        .handler = whatsapp_post_handler,
+        .user_ctx = rest_context
+    };
+    httpd_register_uri_handler(server, &whatsapp_post_uri);
 
     httpd_uri_t common_get_uri = {
         .uri = "/*",

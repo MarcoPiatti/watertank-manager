@@ -129,7 +129,6 @@ void app_main(void) {
     netbiosns_init();
     netbiosns_set_name(CONFIG_EXAMPLE_MDNS_HOST_NAME);
 
-
     ESP_ERROR_CHECK(example_connect());
     ESP_ERROR_CHECK(init_fs());
 
@@ -139,6 +138,7 @@ void app_main(void) {
     ultrasonic_init(&sensor);
     tank = tank_init(125, 1100, 118, sensor);
     pump = pump_init(GPIO_NUM_23);
+    whatsapp_config_recover();
 
     xTaskCreatePinnedToCore(vTask_tank_control, "tank_control_task", 2048, NULL, 5, NULL, 1);
 }
