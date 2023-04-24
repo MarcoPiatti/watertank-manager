@@ -7,6 +7,7 @@
 typedef enum whatsapp_event {
     WPP_PUMP_IS_OFF,
     WPP_PUMP_IS_BACK_ON,
+    WPP_TANK_NOT_REFILLING,
     WPP_HELLO_WORLD
 } whatsapp_event_t;
 
