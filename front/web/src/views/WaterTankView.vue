@@ -4,6 +4,6 @@ import WaterTank from '../components/WaterTank.vue'
 
 <template>
   <main>
-    <WaterTank :capacity=100 :water-level=50 />
+    <WaterTank/>
   </main>
 </template>

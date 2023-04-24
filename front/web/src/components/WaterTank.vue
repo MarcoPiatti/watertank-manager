@@ -1,12 +1,10 @@
 <template>
-    <div style="{position: relative}">
-      <div class="water-tank" :style="{ height: tankHeight + 'px', width: tankWidth + 'px', left: '50%' }">
+      <div class="water-tank" :style="{ height: tankHeight + 'px', width: tankWidth + 'px' }">
         <div class="water-level" :style="{ height: measure.water_level_pct * 100 + '%' }">
           <div class="water-percentage">{{ measure.water_level_pct * 100 }}%</div>
         </div>
       </div>
-      <div class="water-liters" :style="{ top: '-40px', left: '50%' }">{{ measure.water_level_lts }} L</div>
-    </div>
+      <div class="water-liters" :style="{ top: '-40px' }">{{ measure.water_level_lts }} L</div>
 </template>
 
 <script lang="ts">
@@ -36,8 +34,8 @@ export default defineComponent({
         high_pct: 0
       },
       measure: {
-        water_level_pct: 0,
-        water_level_lts: 0,
+        water_level_pct: 0.7,
+        water_level_lts: 700,
         water_level_cm: 0
       }
     }
@@ -51,6 +49,11 @@ export default defineComponent({
 </script>
   
 <style scoped>
+
+.water-tank-info {
+
+}
+
 .water-tank {
   position: relative;
   background-color: #e6e6e6;
