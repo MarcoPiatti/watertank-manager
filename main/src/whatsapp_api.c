@@ -17,11 +17,12 @@ const char * const whatsapp_template_strings[] = {
 };
 
 whatsapp_contact_t wpp_marco = {marco_phone, "Marco"};
+whatsapp_contact_t wpp_sebas = {sebas_phone, "Sebas"};
 
 whatsapp_config_t whatsapp_config = {
     .endpoint = NULL,
     .api_key = NULL,
-    .contacts = {&wpp_marco, NULL, NULL, NULL, NULL}
+    .contacts = {&wpp_marco, &wpp_sebas, NULL, NULL, NULL}
 };
 
 void whatsapp_persist(whatsapp_config_t config) {
