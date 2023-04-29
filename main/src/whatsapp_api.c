@@ -11,8 +11,8 @@
 
 const char * const whatsapp_template_strings[] = {
     "low_water_alert",
-    "hello_world",
-    "hello_world",
+    "water_full_alert",
+    "water_lowering_alert",
     "hello_world"
 };
 
