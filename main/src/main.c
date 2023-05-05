@@ -31,6 +31,10 @@ ESP_EVENT_DEFINE_BASE(WHATSAPP_EVENT);
 
 #define MDNS_INSTANCE "watertank web server"
 
+#define SENSOR_DEFAULT_HEIGHT 127
+#define WATER_DEFAULT_CAPACITY_CM 118
+#define WATER_DEFAULT_CAPACITY_L 1100
+
 static const char *TAG = "example";
 
 static void initialise_mdns(void)
@@ -147,7 +151,7 @@ void app_main(void) {
     
     ultrasonic_sensor_t sensor = { .trigger_pin = GPIO_NUM_33, .echo_pin = GPIO_NUM_25};
     ultrasonic_init(&sensor);
-    tank = tank_init(125, 1100, 118, sensor);
+    tank = tank_init(SENSOR_DEFAULT_HEIGHT, WATER_DEFAULT_CAPACITY_L, WATER_DEFAULT_CAPACITY_CM, sensor);
     pump = pump_init(GPIO_NUM_23);
     whatsapp_config_recover();
 
