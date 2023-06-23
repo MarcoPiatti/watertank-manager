@@ -59,8 +59,21 @@ water_level_t tank_get_water_level(tank_t *tank) {
     return res;
 }
 
+#define SAMPLES 5 
 tank_state_t tank_update_water_level(tank_t *tank) {
     uint32_t measurement;
+    double measured_lvl;
+    double final_measurement;
+    for (int i = 0; i < SAMPLES; i++) {
+        do {
+            do {
+                esp_err_t err = ultrasonic_measure_cm(&(tank->sensor), tank->sensor_pos_cm, &measurement);
+            } while (err != ERR_OK);
+            measured_lvl = tank->sensor_pos_cm - (double)measurement;
+        } while (measured_lvl >= tank.capacity_cm * TANK_ERR_PCT);
+        final_measurement += measured_lvl;
+    }
+    final_measurement = final_measurement / SAMPLES;
     esp_err_t err = ultrasonic_measure_cm(&(tank->sensor), tank->sensor_pos_cm, &measurement);
     if(err == ESP_OK){
         tank->water_level_cm = tank->sensor_pos_cm - (double)measurement;

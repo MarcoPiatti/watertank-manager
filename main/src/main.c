@@ -89,7 +89,7 @@ uint32_t down_seconds = 0;
 double water_level_cm_old = 0;
 void vTask_tank_control( void * pvParameters )
 {
-    const TickType_t xDelay = 1000/*ms*/ / portTICK_PERIOD_MS;
+    const TickType_t xDelay = 300/*ms*/ / portTICK_PERIOD_MS;
     for( ;; )
     {
         water_level_cm_old = tank.water_level_cm;
@@ -103,7 +103,7 @@ void vTask_tank_control( void * pvParameters )
             esp_event_post(WHATSAPP_EVENT, WPP_PUMP_IS_BACK_ON, NULL, 0, portMAX_DELAY);
         }
 
-        if (tank.water_level_cm <= water_level_cm_old && tank.water_level_cm < tank.capacity_cm * 0.85) {
+        if (tank.water_level_cm <= water_level_cm_old && tank.water_level_cm < tank.capacity_cm * TANK_ERR_PCT) {
             down_seconds++;
         } else {
             down_seconds = 0;

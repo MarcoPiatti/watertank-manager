@@ -4,6 +4,8 @@
 #include <ultrasonic.h>
 #include <cJSON.h>
 
+#define TANK_ERR_PCT 0.85
+
 typedef enum tank_state {
     TANK_LOW,
     TANK_MEDIUM,
